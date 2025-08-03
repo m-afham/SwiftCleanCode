@@ -2,7 +2,7 @@
 
 A comprehensive guide to implementing Clean Architecture in Swift for live coding interviews, featuring real API integration and comprehensive testing.
 
-## 🏗️ Architecture Overview
+## Architecture Overview
 
 This project demonstrates Clean Architecture principles with clear separation of concerns across four distinct layers:
 
@@ -15,14 +15,14 @@ This project demonstrates Clean Architecture principles with clear separation of
 │         (Entities, Use Cases)           │
 ├─────────────────────────────────────────┤
 │                Data                     │
-│      (Network, Repositories, DTOs)     │
+│      (Network, Repositories, DTOs)      │
 ├─────────────────────────────────────────┤
-│          Dependency Injection          │
+│          Dependency Injection           │
 │             (DI Container)              │
 └─────────────────────────────────────────┘
 ```
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 SwiftCleanCode/
@@ -56,7 +56,50 @@ SwiftCleanCode/
     └── Presentation/
 ```
 
-## 🎯 Layer Breakdown
+## Component Communication Flow
+
+Here's a visual representation of how components communicate in our clean architecture:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        USER INTERACTION                         │
+└────────────────────────────────┬────────────────────────────────┘
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                  PRESENTATION LAYER                             │
+│  ┌─────────────┐     ┌─────────────────────────────────────┐    │
+│  │    View     │────▶│         ViewModel                   │    │
+│  │ (SwiftUI)   │◀────│    (@Published properties)          │    │
+│  └─────────────┘     └──────────────┬──────────────────────┘    │
+└─────────────────────────────────────┼───────────────────────────┘
+                                      │
+                                      ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    DOMAIN LAYER                                 │
+│              ┌─────────────────────────────────────┐            │
+│              │             Use Case                │            │
+│              │        (Business Logic)             │            │
+│              └──────────────┬──────────────────────┘            │
+└─────────────────────────────┼───────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                     DATA LAYER                                  │
+│  ┌─────────────────┐        ┌──────────────────────────────┐    │
+│  │   Repository    │───────▶│       NetworkService         │    │
+│  │(DTO→Domain Map) │◀───────│     (API Communication)      │    │
+│  └─────────────────┘        └──────────────┬───────────────┘    │
+└────────────────────────────────────────────┼────────────────────┘
+                                             │
+                                             ▼
+                                    ┌─────────────────┐
+                                    │   External API  │
+                                    │(JSONPlaceholder)|
+                                    └─────────────────┘
+```
+
+## Layer Breakdown
 
 ### 1. Domain Layer
 
@@ -313,7 +356,7 @@ final class DIContainer {
 }
 ```
 
-## 🧪 Testing Strategy
+## Testing Strategy
 
 ### Unit Testing Each Layer
 
@@ -380,6 +423,25 @@ final class UserListViewModelTests: XCTestCase {
 }
 ```
 
+### Communication Flow Steps:
+
+1. **User Interaction** → View receives user input (tap, search, etc.)
+2. **View** → ViewModel via method calls (`fetchUsers()`, `searchText` binding)
+3. **ViewModel** → Use Case via protocol methods (`execute()`)
+4. **Use Case** → Repository via protocol methods (`fetchUsers()`)
+5. **Repository** → NetworkService via request methods
+6. **NetworkService** → External API via HTTP requests
+7. **Response Flow**: API → NetworkService → Repository → Use Case → ViewModel → View
+8. **UI Update**: ViewModel publishes changes, View automatically updates
+
+### Key Communication Principles:
+
+- **Unidirectional Data Flow**: Data flows down, events flow up
+- **Protocol-Based**: Each layer communicates through abstractions
+- **Dependency Injection**: DI Container assembles and provides dependencies
+- **Async/Await**: Modern Swift concurrency for network operations
+- **Error Propagation**: Errors are mapped and handled at each layer
+
 ## 🎤 Mock Interview Conversation
 
 ### **Interviewer**: "We need you to create an app that fetches users from an API and displays them in a list. How would you approach this?"
@@ -419,6 +481,26 @@ For loading states, I'd use an enum with cases like `.idle`, `.loading`, `.loade
 - Presentation layer tests validate UI state management
 
 I'd use protocols throughout to enable easy mocking and maintain high test coverage."
+
+## 🚀 Getting Started
+
+1. Clone the repository
+2. Open `SwiftCleanCode.xcodeproj` in Xcode
+3. Build and run the project
+4. Run tests with `Cmd + U`
+
+## 🔗 Key Benefits
+
+- **Testability**: Each layer can be tested independently
+- **Maintainability**: Clear separation of concerns makes code easier to modify
+- **Scalability**: Easy to add new features without affecting existing code
+- **Platform Independence**: Domain layer is pure Swift and can be reused across platforms
+
+## 📚 Additional Resources
+
+- [Clean Architecture by Robert C. Martin](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
+- [iOS Clean Architecture Guide](https://tech.olx.com/clean-architecture-and-mvvm-on-ios-c9d167d9f5b3)
+- [Swift Testing Best Practices](https://developer.apple.com/documentation/xctest)
 
 ## ❓ Frequently Asked Questions
 
@@ -469,26 +551,21 @@ I'd use protocols throughout to enable easy mocking and maintain high test cover
 ### **Q: Where should I put validation logic?**
 **A:** Business validation belongs in the Domain layer (entities or use cases). UI validation (format checking) can be in ViewModels. Data validation (API response validation) belongs in the Data layer.
 
-## 🚀 Getting Started
+### **Q: What's the best way to handle loading states?**
+**A:** Use an enum to represent different states: `.idle`, `.loading`, `.loaded`, `.error(String)`. This provides type safety and makes it easy to handle all possible states in the UI.
 
-1. Clone the repository
-2. Open `SwiftCleanCode.xcodeproj` in Xcode
-3. Build and run the project
-4. Run tests with `Cmd + U`
+### **Q: How should I structure my test files?**
+**A:** Mirror your main project structure in tests. Create separate test classes for each component and use the naming convention `ComponentNameTests`. Group tests by functionality and use descriptive test method names.
 
-## 🔗 Key Benefits
-
-- **Testability**: Each layer can be tested independently
-- **Maintainability**: Clear separation of concerns makes code easier to modify
-- **Scalability**: Easy to add new features without affecting existing code
-- **Platform Independence**: Domain layer is pure Swift and can be reused across platforms
-
-## 📚 Additional Resources
-
-- [Clean Architecture by Robert C. Martin](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
-- [iOS Clean Architecture Guide](https://tech.olx.com/clean-architecture-and-mvvm-on-ios-c9d167d9f5b3)
-- [Swift Testing Best Practices](https://developer.apple.com/documentation/xctest)
+### **Q: What's the role of Use Cases in small apps?**
+**A:** Even in small apps, Use Cases provide clear entry points for business operations, make testing easier, and prepare your app for future growth. They're especially valuable during interviews as they demonstrate understanding of separation of concerns.
 
 ---
 
-**Created by Afham** | [GitHub Repository](https://github.com/yourusername/SwiftCleanCode)
+## 👨‍💻 About the Author
+
+**Created by M. Afham** - iOS/macOS Apps Developer
+
+[![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/m-afham/)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/m-afham/)
+[![Stack Overflow](https://img.shields.io/badge/Stack%20Overflow-F58025?style=for-the-badge&logo=stackoverflow&logoColor=white)](https://stackoverflow.com/users/8451247/m-afham?tab=profile)
